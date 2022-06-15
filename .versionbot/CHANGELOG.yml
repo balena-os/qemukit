@@ -1,4 +1,17 @@
 - commits:
+    - subject: "e2e: Run qemu tests with leviathan master and draft worker release"
+      hash: 1ad940c5e20185de58bd7062919fe4bbb70e59d0
+      body: ""
+      footer:
+        Change-type: patch
+        change-type: patch
+        Signed-off-by: Kyle Harding <kyle@balena.io>
+        signed-off-by: Kyle Harding <kyle@balena.io>
+      author: Kyle Harding
+      nested: []
+  version: 2.5.5
+  date: 2022-06-15T18:23:41.114Z
+- commits:
     - subject: Clean up dev dependencies
       hash: ea2c431a1a2be2827f320d0d74499459188c9102
       body: |
