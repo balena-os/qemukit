@@ -6,10 +6,18 @@ on:
 
 env:
   ENVIRONMENT: balena-cloud.com
+  SUITES: ./suites
+  BALENACLOUD_ORG: testbot
+  BALENACLOUD_API_KEY: ${{ secrets.BALENA_TOKEN }}
 
 jobs:
+
   deploy:
     runs-on: ubuntu-20.04
+    outputs:
+      amd64_commit: ${{ steps.amd64_release.outputs.commit }}
+      aarch64_commit: ${{ steps.aarch64_release.outputs.commit }}
+      armv7hf_commit: ${{ steps.armv7hf_release.outputs.commit }}
     strategy:
       fail-fast: true
       matrix:
@@ -25,8 +33,76 @@ jobs:
         with:
           submodules: true
       - uses: balena-io/deploy-to-balena-action@v0.11.0
+        id: push
         with:
           balena_token: ${{ secrets.BALENA_API_KEY_PUSH }}
           fleet: ${{ matrix.fleets }}
           versionbot: true
           environment: ${{ env.ENVIRONMENT }}
+      - if: matrix.fleets == 'balena/leviathan-worker-amd64'
+        id: amd64_release
+        run: |
+          echo "::set-output name=commit::$(curl -fsSL -X GET \
+            "https://api.${{ env.ENVIRONMENT }}/v6/release(${{ steps.push.outputs.release_id }})?\$select=commit" \
+            -H "Content-Type: application/json" -H "Authorization: Bearer ${{ secrets.BALENA_API_KEY_PUSH }}" | jq -r '.d[].commit')"
+      - if: matrix.fleets == 'balena/leviathan-worker-aarch64'
+        id: aarch64_release
+        run: |
+          echo "::set-output name=commit::$(curl -fsSL -X GET \
+            "https://api.${{ env.ENVIRONMENT }}/v6/release(${{ steps.push.outputs.release_id }})?\$select=commit" \
+            -H "Content-Type: application/json" -H "Authorization: Bearer ${{ secrets.BALENA_API_KEY_PUSH }}" | jq -r '.d[].commit')"
+      - if: matrix.fleets == 'balena/leviathan-worker-armv7hf'
+        id: armv7hf_release
+        run: |
+          echo "::set-output name=commit::$(curl -fsSL -X GET \
+            "https://api.${{ env.ENVIRONMENT }}/v6/release(${{ steps.push.outputs.release_id }})?\$select=commit" \
+            -H "Content-Type: application/json" -H "Authorization: Bearer ${{ secrets.BALENA_API_KEY_PUSH }}" | jq -r '.d[].commit')"
+
+  qemu:
+    needs: [deploy]
+    if: github.event.pull_request.closed == false
+    runs-on: ubuntu-20.04
+    env:
+      WORKER_TYPE: qemu
+      QEMU_CPUS: 1
+      QEMU_MEMORY: 1G
+    strategy:
+      fail-fast: false
+      matrix:
+        # TODO: add generic-aarch64 when released to production
+        device-type: [genericx86-64-ext]
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: true
+          repository: balena-os/leviathan
+          ref: master
+      - name: Copy config
+        run: cp -a suites/config.js workspace/config.js
+      - name: Run test
+        run: |
+          WORKER_RELEASE=${{needs.deploy.outputs.amd64_commit}}
+          DEVICE_TYPE=${{ matrix.device-type }}
+          make test
+
+  # TODO: repin testbot worker to draft release as part of testbot job matrix
+
+  # testbot:
+  #   needs: [deploy]
+  #   if: github.event.pull_request.closed == false
+  #   runs-on: ubuntu-20.04
+  #   env:
+  #     WORKER_TYPE: testbot
+  #     BALENACLOUD_APP_NAME: balena/testbot-rig
+  #   strategy:
+  #     fail-fast: false
+  #     matrix:
+  #       device-type: [raspberrypi3, raspberrypi4-64]
+  #   steps:
+  #     - uses: actions/checkout@v3
+  #       with:
+  #         submodules: true
+  #     - name: Copy config
+  #       run: cp -a suites/config.js workspace/config.js
+  #     - name: Run test
+  #       run: DEVICE_TYPE=${{ matrix.device-type }} make test
