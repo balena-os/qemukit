@@ -1,4 +1,16 @@
 - commits:
+    - subject: "patch: Add append flags to Serial Capture file"
+      hash: b5df346c4375b7de3065a98fe1c93dd5f0dc43cb
+      body: ""
+      footer:
+        Signed-off-by: Vipul Gupta (@vipulgupta2048) <vipul@balena.io>
+        signed-off-by: Vipul Gupta (@vipulgupta2048) <vipul@balena.io>
+      author: Vipul Gupta (@vipulgupta2048)
+      nested: []
+  version: 2.5.5
+  title: "'patch: Add append flags to Serial Capture file'"
+  date: 2022-06-22T16:45:58.776Z
+- commits:
     - subject: Clean up dev dependencies
       hash: ea2c431a1a2be2827f320d0d74499459188c9102
       body: |
