@@ -2,10 +2,6 @@ import { ChildProcess, spawn } from 'child_process';
 import { ensureDir, remove } from 'fs-extra';
 import { fs } from 'mz';
 import { connect } from 'net';
-import { basename } from 'path';
-import { Readable } from 'stream';
-import { pack } from 'tar-fs';
-import { createGzip } from 'zlib';
 
 // This class is awrapper around a simple gstreamer pipe to capture a source into individual frames
 export default class ScreenCapture {
